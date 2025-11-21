@@ -131,26 +131,23 @@ fn render_image_list(ui: &mut egui::Ui, state: &mut AppState) {
 /// 返回是否应该删除这个图片
 fn render_image_item(ui: &mut egui::Ui, state: &mut AppState, index: usize) -> bool {
     // 点击选中
-    if ui
-        .interact(
-            ui.available_rect_before_wrap(),
-            ui.id().with(("image_item", index)),
-            egui::Sense::click(),
-        )
-        .clicked()
-    {
-        state.select_image(index);
-    }
+    // 点击选中逻辑已移至 render_image_list 中处理
+    // 避免使用 ui.available_rect_before_wrap() 导致交互区域重叠或错误
     
     // 图片信息栏(带关闭按钮)
     let mut should_remove = false;
     ui.horizontal(|ui| {
-        ui.label(format!(
+        // 点击标题选中
+        let label = ui.add(egui::Label::new(format!(
             "📄 {} ({}×{})",
             state.images[index].file_name,
             state.images[index].width,
             state.images[index].height
-        ));
+        )).sense(egui::Sense::click()));
+        
+        if label.clicked() {
+            state.select_image(index);
+        }
         
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if ui.button("❌ 关闭").clicked() {
@@ -167,7 +164,24 @@ fn render_image_item(ui: &mut egui::Ui, state: &mut AppState, index: usize) -> b
     ui.separator();
     
     // 图片操作区(显示图片和切割线)
-    render_image_with_guides(ui, state, index);
+    ui.horizontal(|ui| {
+        if let Some(response) = render_image_with_guides(ui, state, index) {
+            // 填补右侧空隙并使其可点击
+            let available_width = ui.available_width();
+            let height = response.rect.height();
+            
+            if available_width > 0.0 {
+                let (_, response) = ui.allocate_at_least(
+                    egui::vec2(available_width, height),
+                    egui::Sense::click(),
+                );
+                
+                if response.clicked() {
+                    state.select_image(index);
+                }
+            }
+        }
+    });
     
     ui.separator();
     
@@ -181,7 +195,7 @@ fn render_image_item(ui: &mut egui::Ui, state: &mut AppState, index: usize) -> b
 }
 
 /// 渲染图片和切割线
-fn render_image_with_guides(ui: &mut egui::Ui, state: &mut AppState, index: usize) {
+fn render_image_with_guides(ui: &mut egui::Ui, state: &mut AppState, index: usize) -> Option<egui::Response> {
     // 获取图片尺寸(复制值,避免持有引用)
     let (width, height) = {
         let img = &state.images[index];
@@ -194,16 +208,14 @@ fn render_image_with_guides(ui: &mut egui::Ui, state: &mut AppState, index: usiz
     
     // 安全检查:确保image尺寸有效
     if width == 0 || height == 0 {
-        ui.label("图片尺寸无效");
-        return;
+        return Some(ui.label("图片尺寸无效"));
     }
     
     let aspect_ratio = width as f32 / height as f32;
     
     // 安全检查:确保aspect_ratio有效
     if !aspect_ratio.is_finite() || aspect_ratio <= 0.0 {
-        ui.label("图片宽高比无效");
-        return;
+        return Some(ui.label("图片宽高比无效"));
     }
     
     let (display_width, display_height) = if available_width / max_height > aspect_ratio {
@@ -220,11 +232,15 @@ fn render_image_with_guides(ui: &mut egui::Ui, state: &mut AppState, index: usiz
     let scale_x = display_width / width as f32;
     let scale_y = display_height / height as f32;
     
-    // 预留绘制区域
+    // 预留绘制区域(使其可点击以选中图片)
     let (response, painter) = ui.allocate_painter(
         egui::vec2(display_width, display_height),
-        egui::Sense::hover(),
+        egui::Sense::click(),
     );
+    
+    if response.clicked() {
+        state.select_image(index);
+    }
     
     let rect = response.rect;
     
@@ -370,11 +386,8 @@ fn render_image_with_guides(ui: &mut egui::Ui, state: &mut AppState, index: usiz
         let acc_id = ui.id().with((index, "bottom_acc"));
         let mut acc = ui.data(|d| d.get_temp::<f32>(acc_id).unwrap_or(0.0));
         
-        // 注意: 向下拖动增加bottom值(因为bottom是距离底部的距离,向下拖意味着bottom变小? 不,bottom是距离底部的像素数)
-        // 让我们重新理一下:
-        // rect.bottom() - bottom * scale
-        // 向下拖动 -> delta_y > 0 -> bottom_y 变大 -> bottom 应该变小
-        // 所以 delta_y > 0 对应 bottom 减小
+        // 拖动逻辑: 向下拖动 (delta_y > 0) 意味着切割线向下移动, 此时 `bottom` 参数 (距离底部的像素数) 应该减小。
+        // 因此 `delta_y` 应与 `bottom` 的变化量呈负相关。
         acc += -delta_y / scale_y;
         
         let param_delta = acc.trunc() as i32;
@@ -471,6 +484,8 @@ fn render_image_with_guides(ui: &mut egui::Ui, state: &mut AppState, index: usiz
         // 注意:不在这里生成预览,避免拖动时卡顿
         // 预览会在render_image_item末尾统一生成
     }
+    
+    Some(response)
 }
 
 /// 绘制棋盘格背景

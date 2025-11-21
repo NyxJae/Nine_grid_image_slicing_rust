@@ -26,6 +26,39 @@ impl eframe::App for NineGridSlicerApp {
         // 渲染菜单栏
         menu_bar::render(ctx, &mut self.state);
 
+        // 处理导出消息
+        let mut export_finished = false;
+        let mut export_error = None;
+
+        if let Some(receiver) = &self.state.export_receiver {
+            while let Ok(msg) = receiver.try_recv() {
+                match msg {
+                    crate::state::app_state::ExportMessage::Progress(progress, message) => {
+                        self.state.export_progress = progress;
+                        self.state.export_message = message;
+                    }
+                    crate::state::app_state::ExportMessage::Finished => {
+                        export_finished = true;
+                        self.state.export_message = "导出完成!".to_string();
+                    }
+                    crate::state::app_state::ExportMessage::Error(error) => {
+                        export_error = Some(error);
+                    }
+                }
+            }
+        }
+
+        if export_finished {
+            self.state.is_exporting = false;
+            self.state.export_receiver = None;
+        }
+
+        if let Some(error) = export_error {
+            self.state.is_exporting = false;
+            self.state.export_receiver = None;
+            self.state.set_error(format!("导出失败: {}", error));
+        }
+
         // 底部按钮区(先渲染,这样中间面板才能正确计算可用高度)
         egui::TopBottomPanel::bottom("bottom_panel")
             .min_height(70.0)

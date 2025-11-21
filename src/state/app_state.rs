@@ -1,5 +1,15 @@
 use crate::state::image_item::ImageItem;
 
+/// 导出消息
+pub enum ExportMessage {
+    /// 进度更新: (进度0.0-1.0, 消息)
+    Progress(f32, String),
+    /// 导出完成
+    Finished,
+    /// 导出错误
+    Error(String),
+}
+
 /// 应用全局状态
 pub struct AppState {
     /// 图片列表
@@ -19,6 +29,12 @@ pub struct AppState {
     
     /// 错误消息
     pub error_message: Option<String>,
+
+    /// 导出消息接收器
+    pub export_receiver: Option<std::sync::mpsc::Receiver<ExportMessage>>,
+
+    /// 是否显示覆盖确认对话框
+    pub show_overwrite_confirmation: bool,
 }
 
 impl AppState {
@@ -31,6 +47,8 @@ impl AppState {
             export_progress: 0.0,
             export_message: String::new(),
             error_message: None,
+            export_receiver: None,
+            show_overwrite_confirmation: false,
         }
     }
     

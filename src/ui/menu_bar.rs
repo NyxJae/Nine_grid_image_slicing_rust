@@ -48,7 +48,7 @@ pub fn render(ctx: &egui::Context, state: &mut AppState) {
                     ui.close_menu();
                 }
                 
-                if ui.button("ℹ️ 关于...").clicked() {
+                if ui.button("ℹ 关于...").clicked() {
                     show_about();
                     ui.close_menu();
                 }
@@ -82,15 +82,16 @@ fn import_images(state: &mut AppState) {
     }
 }
 
+use crate::utils::export_utils;
+use crate::image_processing::exporter::ExportMode;
+
 /// 覆盖原图导出
 fn export_overwrite(state: &mut AppState) {
     if !state.has_images() {
         return;
     }
     
-    // TODO: 显示确认对话框
-    // 目前直接执行导出
-    do_export(state, crate::image_processing::exporter::ExportMode::Overwrite);
+    state.show_overwrite_confirmation = true;
 }
 
 /// 添加后缀导出
@@ -99,67 +100,7 @@ fn export_with_suffix(state: &mut AppState) {
         return;
     }
     
-    do_export(
-        state,
-        crate::image_processing::exporter::ExportMode::WithSuffix("_cut".to_string()),
-    );
-}
-
-/// 执行导出
-fn do_export(state: &mut AppState, mode: crate::image_processing::exporter::ExportMode) {
-    use crate::image_processing::exporter;
-    
-    // 设置导出状态
-    state.is_exporting = true;
-    state.export_progress = 0.0;
-    state.export_message = "正在导出...".to_string();
-    
-    // 直接导出图片(不使用回调,避免闭包修改问题)
-    let mut results = Vec::new();
-    let total = state.images.len();
-    
-    for (index, item) in state.images.iter().enumerate() {
-        // 更新进度
-        state.export_progress = (index + 1) as f32 / total as f32;
-        state.export_message = format!("正在导出 {}/{}", index + 1, total);
-        
-        // 导出图片
-        let result = exporter::export_image(item, &mode);
-        results.push((item.file_path.clone(), result));
-    }
-    
-    // 处理结果
-    let success_count = results.iter().filter(|(_, r)| r.is_ok()).count();
-    let fail_count = results.len() - success_count;
-    
-    if fail_count == 0 {
-        state.export_message = format!("成功导出 {} 张图片", success_count);
-    } else {
-        state.export_message = format!(
-            "导出完成: 成功 {} 张, 失败 {} 张",
-            success_count, fail_count
-        );
-        
-        // 收集错误信息
-        let errors: Vec<String> = results
-            .iter()
-            .filter_map(|(path, r)| {
-                r.as_ref().err().map(|e| {
-                    format!("{}: {}", path.file_name().unwrap_or_default().to_string_lossy(), e)
-                })
-            })
-            .collect();
-        
-        if !errors.is_empty() {
-            eprintln!("导出错误:\n{}", errors.join("\n"));
-        }
-    }
-    
-    state.export_progress = 1.0;
-    
-    // 延迟一下让用户看到完成消息
-    std::thread::sleep(std::time::Duration::from_secs(1));
-    state.is_exporting = false;
+    export_utils::start_export(state, ExportMode::WithSuffix("_sliced".to_string()));
 }
 
 /// 显示使用说明
