@@ -1,0 +1,40 @@
+[package]
+name = "nine_grid_slicer"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name"]
+description = "九宫格图片切割工具 - Unity UI 九宫格切图助手"
+
+[dependencies]
+# GUI框架
+eframe = "0.28"
+egui = "0.28"
+
+# 图片处理
+image = "0.25"
+
+# 文件对话框
+rfd = "0.14"
+
+# 错误处理
+anyhow = "1.0"
+
+# 日志
+env_logger = "0.11"
+
+# 序列化(用于配置保存等,可选)
+serde = { version = "1.0", features = ["derive"] }
+
+[profile.release]
+opt-level = 3          # 最大优化
+lto = true             # 链接时优化
+codegen-units = 1      # 单个代码生成单元,优化更好
+strip = true           # 移除调试符号,减小体积
+panic = "abort"        # panic时直接abort,减小体积
+
+[profile.dev]
+opt-level = 1          # 开发时适度优化,提升编译速度
+
+# Windows特定配置
+[target.'cfg(target_os = "windows")'.build-dependencies]
+winres = "0.1"         # Windows资源文件(图标等)
