@@ -41,20 +41,15 @@ pub fn render(ctx: &egui::Context, state: &mut AppState) {
                 }
             });
             
-            // 帮助菜单
-            ui.menu_button("帮助(H)", |ui| {
-                if ui.button("📖 使用说明...").clicked() {
-                    show_help();
-                    ui.close_menu();
-                }
-                
-                if ui.button("ℹ 关于...").clicked() {
-                    show_about();
-                    ui.close_menu();
-                }
-            });
+            // 关于菜单
+            if ui.button("ℹ 关于...").clicked() {
+                show_about(state);
+            }
         });
     });
+    
+    // 渲染关于对话框
+    render_about_dialog(ctx, state);
     
     // 处理快捷键
     handle_shortcuts(ctx, state);
@@ -103,16 +98,53 @@ fn export_with_suffix(state: &mut AppState) {
     export_utils::start_export(state, ExportMode::WithSuffix("_sliced".to_string()));
 }
 
-/// 显示使用说明
-fn show_help() {
-    // TODO: 实现使用说明对话框
-    println!("显示使用说明");
+/// 显示关于对话框
+fn show_about(state: &mut AppState) {
+    state.show_about_dialog = true;
 }
 
-/// 显示关于对话框
-fn show_about() {
-    // TODO: 实现关于对话框
-    println!("显示关于");
+/// 渲染关于对话框
+fn render_about_dialog(ctx: &egui::Context, state: &mut AppState) {
+    if !state.show_about_dialog {
+        return;
+    }
+    
+    egui::Window::new("ℹ 关于")
+        .collapsible(false)
+        .resizable(false)
+        .default_width(400.0)
+        .show(ctx, |ui| {
+            ui.vertical_centered(|ui| {
+                ui.heading("将可九宫格的大图进行快速切图的便捷工具");
+                ui.add_space(10.0);
+
+                ui.label("版本：1.0.0");
+                ui.add_space(5.0);
+                
+                ui.horizontal(|ui| {
+                    ui.label("项目地址：");
+                    ui.hyperlink_to(
+                        "GitHub",
+                        "https://github.com/NyxJae/Nine_grid_image_slicing_rust"
+                    );
+                });
+                ui.add_space(10.0);
+                
+                ui.label("使用 Rust + egui 构建");
+                ui.add_space(5.0);
+                
+                ui.label("© 2025 NyxJae HJ");
+            });
+            
+            ui.add_space(10.0);
+            ui.separator();
+            
+            ui.horizontal(|ui| {
+                if ui.button("关闭").clicked() {
+                    state.show_about_dialog = false;
+                }
+            });
+        });
 }
 
 /// 处理快捷键

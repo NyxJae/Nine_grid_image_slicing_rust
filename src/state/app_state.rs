@@ -35,6 +35,9 @@ pub struct AppState {
 
     /// 是否显示覆盖确认对话框
     pub show_overwrite_confirmation: bool,
+
+    /// 是否显示关于对话框
+    pub show_about_dialog: bool,
 }
 
 impl AppState {
@@ -49,6 +52,7 @@ impl AppState {
             error_message: None,
             export_receiver: None,
             show_overwrite_confirmation: false,
+            show_about_dialog: false,
         }
     }
     
