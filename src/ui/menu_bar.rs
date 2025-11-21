@@ -41,6 +41,15 @@ pub fn render(ctx: &egui::Context, state: &mut AppState) {
                 }
             });
             
+            // 关闭所有图片按钮
+            let has_images = state.has_images();
+            if ui
+                .add_enabled(has_images, egui::Button::new("❌ 关闭所有图片"))
+                .clicked()
+            {
+                state.clear_images();
+            }
+            
             // 关于菜单
             if ui.button("ℹ 关于...").clicked() {
                 show_about(state);

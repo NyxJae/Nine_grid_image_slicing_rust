@@ -74,13 +74,13 @@ pub fn render(ui: &mut egui::Ui, state: &mut AppState) {
                 ui.add_space(10.0);
                 
                 ui.horizontal(|ui| {
-                    if ui.button("取消").clicked() {
-                        state.show_overwrite_confirmation = false;
-                    }
-                    
                     if ui.button("确定覆盖").clicked() {
                         state.show_overwrite_confirmation = false;
                         export_utils::start_export(state, ExportMode::Overwrite);
+                    }
+                    
+                    if ui.button("取消").clicked() {
+                        state.show_overwrite_confirmation = false;
                     }
                 });
             });
