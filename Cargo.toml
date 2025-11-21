@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Your Name"]
 description = "九宫格图片切割工具 - Unity UI 九宫格切图助手"
+build = "build.rs"
 
 [dependencies]
 # GUI框架
@@ -38,3 +39,4 @@ opt-level = 1          # 开发时适度优化,提升编译速度
 # Windows特定配置
 [target.'cfg(target_os = "windows")'.build-dependencies]
 winres = "0.1"         # Windows资源文件(图标等)
+

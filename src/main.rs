@@ -1,3 +1,6 @@
+// Windows GUI应用配置 - 消除控制台黑框
+#![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
+
 mod app;
 mod image_processing;
 mod state;
@@ -36,10 +39,57 @@ fn main() -> eframe::Result<()> {
 }
 
 /// 加载应用图标
+/// 注意：Windows exe的图标是通过build.rs配置的，这里是窗口标题栏图标
+/// 使用 include_bytes! 将图标嵌入到二进制文件中，确保release构建后也能正常显示
 fn load_icon() -> egui::IconData {
-    // TODO: 添加自定义图标
-    // 暂时返回默认图标
-    egui::IconData::default()
+    // 将图标文件嵌入到二进制中，避免路径问题
+    match load_icon_from_embedded() {
+        Ok(icon) => icon,
+        Err(e) => {
+            // 如果嵌入图标加载失败，尝试从文件系统加载
+            eprintln!("嵌入图标加载失败: {}，尝试从文件系统加载", e);
+            match load_icon_from_file("assets/icon.png") {
+                Ok(icon) => icon,
+                Err(_) => {
+                    eprintln!("未找到图标文件 assets/icon.png，使用默认图标");
+                    egui::IconData::default()
+                }
+            }
+        }
+    }
+}
+
+/// 从嵌入的字节数据加载图标
+fn load_icon_from_embedded() -> Result<egui::IconData, Box<dyn std::error::Error>> {
+    use image::GenericImageView;
+    
+    // 编译时将图标文件嵌入到二进制中
+    let icon_bytes = include_bytes!("../assets/icon.png");
+    
+    let img = image::load_from_memory(icon_bytes)?;
+    let (width, height) = img.dimensions();
+    let rgba = img.to_rgba8().into_raw();
+    
+    Ok(egui::IconData {
+        rgba,
+        width,
+        height,
+    })
+}
+
+/// 从PNG文件加载图标（作为备用方案）
+fn load_icon_from_file(path: &str) -> Result<egui::IconData, Box<dyn std::error::Error>> {
+    use image::GenericImageView;
+    
+    let img = image::open(path)?;
+    let (width, height) = img.dimensions();
+    let rgba = img.to_rgba8().into_raw();
+    
+    Ok(egui::IconData {
+        rgba,
+        width,
+        height,
+    })
 }
 
 /// 配置字体以支持中文
@@ -49,16 +99,6 @@ fn setup_fonts(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
     
     // 加载Windows系统自带的中文字体
-    // 这里使用一个简单的方法:让egui尝试使用系统字体
-    // egui默认字体列表中,"Hack"和"Ubuntu-Light"不包含中文
-    // 我们需要确保字体回退顺序正确
-    
-    // 对于Windows,我们可以尝试读取系统字体
-    // 但更简单的方法是使用egui内置的字体,并添加中文字体数据
-    
-    // 暂时使用这个方法:不修改字体家族,让它使用默认
-    // 但是我们需要确保使用的是包含更多字符的字体
-    
     // 检查是否可以加载本地字体文件
     #[cfg(target_os = "windows")]
     {
