@@ -578,28 +578,28 @@ fn render_params_controls(ui: &mut egui::Ui, state: &mut AppState, index: usize)
     ui.horizontal(|ui| {
         ui.label("上:");
         let mut top = state.images[index].top as i32;
-        if ui.add(egui::DragValue::new(&mut top).range(0..=1000)).changed() {
+        if ui.add(egui::DragValue::new(&mut top).range(0..=5000)).changed() {
             state.images[index].top = top.max(0) as u32;
             state.images[index].validate_params();
         }
         
         ui.label("下:");
         let mut bottom = state.images[index].bottom as i32;
-        if ui.add(egui::DragValue::new(&mut bottom).range(0..=1000)).changed() {
+        if ui.add(egui::DragValue::new(&mut bottom).range(0..=5000)).changed() {
             state.images[index].bottom = bottom.max(0) as u32;
             state.images[index].validate_params();
         }
         
         ui.label("左:");
         let mut left = state.images[index].left as i32;
-        if ui.add(egui::DragValue::new(&mut left).range(0..=1000)).changed() {
+        if ui.add(egui::DragValue::new(&mut left).range(0..=5000)).changed() {
             state.images[index].left = left.max(0) as u32;
             state.images[index].validate_params();
         }
         
         ui.label("右:");
         let mut right = state.images[index].right as i32;
-        if ui.add(egui::DragValue::new(&mut right).range(0..=1000)).changed() {
+        if ui.add(egui::DragValue::new(&mut right).range(0..=5000)).changed() {
             state.images[index].right = right.max(0) as u32;
             state.images[index].validate_params();
         }
