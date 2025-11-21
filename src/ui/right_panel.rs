@@ -27,10 +27,25 @@ fn render_preview_info(ui: &mut egui::Ui, image: &crate::state::image_item::Imag
         ui.label(format!("📄 预览: {}", image.file_name));
         ui.label(format!("📐 原始: {}×{}", image.width, image.height));
         
-        let (sliced_width, sliced_height) = (image.left + image.right, image.top + image.bottom);
+        // 计算切割后尺寸，需要匹配 slicer.rs 中的逻辑
+        // 如果某方向的两个参数都为0，则该方向保留完整尺寸
+        let sliced_width = if image.left == 0 && image.right == 0 {
+            image.width  // 水平方向保留全宽
+        } else {
+            image.left + image.right  // 左角宽度 + 右角宽度
+        };
+        
+        let sliced_height = if image.top == 0 && image.bottom == 0 {
+            image.height  // 垂直方向保留全高
+        } else {
+            image.top + image.bottom  // 上角高度 + 下角高度
+        };
+        
         ui.label(format!("✂ 切割后: {}×{}", sliced_width, sliced_height));
         
-        let (final_width, final_height) = image.get_output_size();
+        // 计算最终尺寸（应用缩放后）
+        let final_width = (sliced_width as f32 * image.scale / 100.0) as u32;
+        let final_height = (sliced_height as f32 * image.scale / 100.0) as u32;
         ui.label(format!(
             "🔍 缩放: {}% → 最终: {}×{}",
             image.scale, final_width, final_height
